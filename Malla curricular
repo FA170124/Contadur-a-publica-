@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malla Curricular Contaduría Pública - UBA</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      margin: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .grid {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 20px;
+    }
+    .column {
+      min-width: 220px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .column h3 {
+      text-align: center;
+      color: #34495e;
+    }
+    .subject {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      background-color: #ecf0f1;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      position: relative;
+    }
+    .subject:hover {
+      background-color: #d0e6f7;
+    }
+    .subject.approved {
+      background-color: #b2f2bb;
+      text-decoration: line-through;
+    }
+    .subject.locked {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+    }
+    .subject.locked:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: -5px;
+      left: 105%;
+      background: #333;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 5px;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malla Curricular Interactiva - Contaduría Pública (UBA)</h1>
+  <div class="grid" id="curriculum"></div>
+
+  <script>
+    const curriculum = [
+      {
+        title: '1° Ciclo I',
+        subjects: ["Filosofía General", "Ingles I", "Introducción a la economía I", "Matemática I", "Teoría Administrativa I"]
+      },
+      {
+        title: '1° Ciclo II',
+        subjects: ["Ingles II", "Introducción a la economía II", "Matemática II", "Sociología general", "Teoría administrativa II"]
+      },
+      {
+        title: '2° Ciclo I',
+        subjects: ["Computación I", "Contabilidad financiera I", "Matemática III", "Microeconomía I", "Técnicas de investigación"]
+      },
+      {
+        title: '2° Ciclo II',
+        subjects: ["Computación II", "contabilidad financiera II", "Derecho mercantil I", "Microeconomía I", "Matemática financiera"]
+      },
+      {
+        title: '3° Ciclo I',
+        subjects: ["Contabilidad de costos I", "Contabilidad financiera III", "Derecho mercantil II", "Estadística I"]
+      },
+      {
+        title: '3° Ciclo II',
+        subjects: ["Contabilidad de costos II", "Contabilidad financiera IV", "Derecho tributario I", "Estadística II"]
+      },
+      {
+        title: '4° Ciclo I',
+        subjects: ["Administración financiera I", "Contabilidad de seguros", "Contabilidad financiera V", "Derecho tributario II"]
+      },
+      {
+        title: '4° Ciclo II',
+        subjects: ["Administración financiera II", "Auditoria I", "Contabilidad Agrícola y ganadera", "Contabilidad bancaria"]
+      },
+      {
+        title: '5° Ciclo I',
+        subjects: ["Administración de la producción", "Auditoria II", "Contabilidad Gubernamental", "Derecho laboral", "Sistemas contables computarizados"]
+      },
+      {
+        title: '5° Ciclo II',
+        subjects: ["Auditoria en sistemas", "Formulación y evolución de proyectos", "Legislación aduanera", "Seminario de auditoria"]
+      }
+    ];
+
+    const prerequisites = {
+      "Ingles II": ["Ingles I"],
+      "Introducción a la economía II": ["Introducción a la economía I"],
+      "Matemática II": ["Matemática I"],
+      "Teoría administrativa II": ["Teoría Administrativa I"],
+      "Computación II": ["Computación I"],
+      "contabilidad financiera II": ["Contabilidad financiera I"],
+      "Contabilidad de costos II": ["Contabilidad de costos I"],
+      "Contabilidad financiera III": ["contabilidad financiera II"],
+      "Contabilidad financiera IV": ["Contabilidad financiera III"],
+      "Contabilidad financiera V": ["Contabilidad financiera IV"],
+      "Auditoria I": ["Contabilidad financiera V"],
+      "Auditoria II": ["Auditoria I"],
+      "Auditoria en sistemas": ["Auditoria II"]
+    };
+
+    const storageKey = 'mallaUBA';
+    let approvedSubjects = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    function isUnlocked(subject) {
+      const reqs = prerequisites[subject];
+      return !reqs || reqs.every(r => approvedSubjects.includes(r));
+    }
+
+    function render() {
+      document.getElementById("curriculum").innerHTML = '';
+
+      curriculum.forEach(cycle => {
+        const col = document.createElement("div");
+        col.className = "column";
+        col.innerHTML = `<h3>${cycle.title}</h3>`;
+
+        cycle.subjects.forEach(subject => {
+          const div = document.createElement("div");
+          div.className = "subject";
+          div.textContent = subject;
+
+          if (approvedSubjects.includes(subject)) {
+            div.classList.add("approved");
+          } else if (!isUnlocked(subject)) {
+            div.classList.add("locked");
+            div.setAttribute("data-tooltip", `Requiere: ${prerequisites[subject].join(", ")}`);
+          } else {
+            div.addEventListener("click", () => {
+              approvedSubjects.push(subject);
+              localStorage.setItem(storageKey, JSON.stringify(approvedSubjects));
+              render();
+            });
+          }
+
+          col.appendChild(div);
+        });
+        document.getElementById("curriculum").appendChild(col);
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
