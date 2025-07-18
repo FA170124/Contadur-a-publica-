@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malla Curricular Contaduría Pública - UBA</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+    }
+    .year {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .year h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .subject {
+      padding: 0.5rem;
+      margin: 0.25rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #e0e7ff;
+      transition: 0.3s;
+      position: relative;
+    }
+    .subject.approved {
+      background: #c6f6d5;
+      text-decoration: line-through;
+    }
+    .subject.locked {
+      background: #fcdada;
+      cursor: not-allowed;
+    }
+    .subject.locked::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      margin: auto;
+      width: max-content;
+      max-width: 200px;
+      background: #333;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 5px;
+      white-space: normal;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-0.5rem);
+      transition: opacity 0.3s ease;
+    }
+    .subject.locked:hover::after {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malla Curricular - Contaduría Pública (UBA)</h1>
+  <div class="grid" id="curriculum"></div>
+  <script>
+    const subjects = [
+      { cycle: '1° Ciclo I', name: 'Filosofía General' },
+      { cycle: '1° Ciclo I', name: 'Inglés I' },
+      { cycle: '1° Ciclo I', name: 'Introducción a la economía I' },
+      { cycle: '1° Ciclo I', name: 'Matemática I' },
+      { cycle: '1° Ciclo I', name: 'Teoría Administrativa I' },
+
+      { cycle: '1° Ciclo II', name: 'Inglés II' },
+      { cycle: '1° Ciclo II', name: 'Introducción a la economía II' },
+      { cycle: '1° Ciclo II', name: 'Matemática II' },
+      { cycle: '1° Ciclo II', name: 'Sociología general' },
+      { cycle: '1° Ciclo II', name: 'Teoría administrativa II', requires: ['Teoría Administrativa I'] },
+
+      { cycle: '2° Ciclo I', name: 'Computación I' },
+      { cycle: '2° Ciclo I', name: 'Contabilidad financiera I', requires: ['Teoría administrativa II'] },
+      { cycle: '2° Ciclo I', name: 'Matemática III' },
+      { cycle: '2° Ciclo I', name: 'Microeconomía I' },
+      { cycle: '2° Ciclo I', name: 'Técnicas de investigación' },
+
+      { cycle: '2° Ciclo II', name: 'Computación II' },
+      { cycle: '2° Ciclo II', name: 'Contabilidad financiera II' },
+      { cycle: '2° Ciclo II', name: 'Derecho mercantil I' },
+      { cycle: '2° Ciclo II', name: 'Microeconomía I' },
+      { cycle: '2° Ciclo II', name: 'Matemática financiera' },
+
+      { cycle: '3° Ciclo I', name: 'Contabilidad de costos I' },
+      { cycle: '3° Ciclo I', name: 'Contabilidad financiera III' },
+      { cycle: '3° Ciclo I', name: 'Derecho mercantil II' },
+      { cycle: '3° Ciclo I', name: 'Estadística I' },
+
+      { cycle: '3° Ciclo II', name: 'Contabilidad de costos II' },
+      { cycle: '3° Ciclo II', name: 'Contabilidad financiera IV' },
+      { cycle: '3° Ciclo II', name: 'Derecho tributario I' },
+      { cycle: '3° Ciclo II', name: 'Estadística II' },
+
+      { cycle: '4° Ciclo I', name: 'Administración financiera I' },
+      { cycle: '4° Ciclo I', name: 'Contabilidad de seguros' },
+      { cycle: '4° Ciclo I', name: 'Contabilidad financiera V' },
+      { cycle: '4° Ciclo I', name: 'Derecho tributario II' },
+
+      { cycle: '4° Ciclo II', name: 'Administración financiera II' },
+      { cycle: '4° Ciclo II', name: 'Auditoría I' },
+      { cycle: '4° Ciclo II', name: 'Contabilidad Agrícola y ganadera' },
+      { cycle: '4° Ciclo II', name: 'Contabilidad bancaria' },
+
+      { cycle: '5° Ciclo I', name: 'Administración de la producción' },
+      { cycle: '5° Ciclo I', name: 'Auditoría II' },
+      { cycle: '5° Ciclo I', name: 'Contabilidad Gubernamental' },
+      { cycle: '5° Ciclo I', name: 'Derecho laboral' },
+      { cycle: '5° Ciclo I', name: 'Sistemas contables computarizados' },
+
+      { cycle: '5° Ciclo II', name: 'Auditoría en sistemas' },
+      { cycle: '5° Ciclo II', name: 'Formulación y evolución de proyectos' },
+      { cycle: '5° Ciclo II', name: 'Legislación aduanera' },
+      { cycle: '5° Ciclo II', name: 'Seminario de auditoría' },
+    ];
+
+    const curriculum = document.getElementById('curriculum');
+    const cycles = [...new Set(subjects.map(s => s.cycle))];
+
+    const approved = new Set(JSON.parse(localStorage.getItem('approvedSubjects') || '[]'));
+
+    function render() {
+      curriculum.innerHTML = '';
+      for (const cycle of cycles) {
+        const yearDiv = document.createElement('div');
+        yearDiv.className = 'year';
+        const title = document.createElement('h2');
+        title.textContent = cycle;
+        yearDiv.appendChild(title);
+
+        subjects.filter(s => s.cycle === cycle).forEach(subject => {
+          const div = document.createElement('div');
+          div.className = 'subject';
+          div.textContent = subject.name;
+
+          const isApproved = approved.has(subject.name);
+          const hasPrereq = subject.requires?.some(req => !approved.has(req));
+
+          if (isApproved) div.classList.add('approved');
+          else if (hasPrereq) {
+            div.classList.add('locked');
+            div.setAttribute('data-tooltip', 'Requiere: ' + subject.requires.filter(req => !approved.has(req)).join(', '));
+          } else {
+            div.addEventListener('click', () => {
+              approved.add(subject.name);
+              localStorage.setItem('approvedSubjects', JSON.stringify([...approved]));
+              render();
+            });
+          }
+
+          yearDiv.appendChild(div);
+        });
+
+        curriculum.appendChild(yearDiv);
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
